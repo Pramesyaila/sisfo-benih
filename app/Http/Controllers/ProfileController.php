@@ -16,7 +16,9 @@ class ProfileController extends Controller
             ? 'layouts.app'
             : 'layouts.admin';
 
-        return view('profile.show', compact('user', 'layout'));
+        $view = $user->isKonsumen() ? 'customer.profile.show' : 'profile.show';
+
+        return view($view, compact('user', 'layout'));
     }
 
     public function edit()
@@ -27,7 +29,9 @@ class ProfileController extends Controller
             ? 'layouts.app'
             : 'layouts.admin';
 
-        return view('profile.edit', compact('user', 'layout'));
+        $view = $user->isKonsumen() ? 'customer.profile.edit' : 'profile.edit';
+
+        return view($view, compact('user', 'layout'));
     }
 
     public function update(Request $request)
