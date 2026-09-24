@@ -8,7 +8,10 @@
         <h2 class="text-lg font-bold">{{ $order->order_number }}</h2>
         <p class="text-sm text-gray-500">{{ $order->user->name }} &middot; {{ $order->created_at->format('d M Y H:i') }}</p>
     </div>
-    <span class="badge {{ $order->statusBadgeColor() }}">{{ \App\Models\Order::statusLabel($order->status) }}</span>
+    <div class="flex items-center gap-3">
+        <a href="{{ route('admin.orders.print.permohonan', $order) }}" target="_blank" class="text-sm bg-white border border-gray-200 px-3 py-1.5 rounded-md hover:border-primary">🖨️ Cetak Surat Permohonan</a>
+        <span class="badge {{ $order->statusBadgeColor() }}">{{ \App\Models\Order::statusLabel($order->status) }}</span>
+    </div>
 </div>
 
 <div class="grid md:grid-cols-3 gap-6">
@@ -57,12 +60,20 @@
         @endif
 
         @if($order->contract)
-            <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-5">
+             <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-5">
                 <h3 class="font-semibold mb-2">Kontrak {{ $order->contract->contract_number }}</h3>
                 <pre class="whitespace-pre-wrap text-xs bg-base p-3 rounded-md border">{{ $order->contract->content }}</pre>
-                <button onclick="window.print()" class="mt-2 text-primary-dark text-sm font-semibold hover:underline">🖨️ Cetak Kontrak</button>
-            </div>
+                <a href="{{ route('admin.orders.print.kontrak', $order) }}" target="_blank" class="inline-block mt-2 text-primary-dark text-sm font-semibold hover:underline">🖨️ Cetak Surat Perjanjian</a>    </div>
+             </div>
         @endif
+
+        @if($order->pnbpBill)
+    <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-5">
+        <h3 class="font-semibold mb-2">Tagihan PNBP {{ $order->pnbpBill->bill_number }}</h3>
+        <pre class="whitespace-pre-wrap text-xs bg-base p-3 rounded-md border">{{ $order->pnbpBill->content }}</pre>
+        <button onclick="window.print()" class="mt-2 text-primary-dark text-sm font-semibold hover:underline">🖨️ Cetak Tagihan</button>
+    </div>
+@endif
 
         @if($order->invoice)
             <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-5">
@@ -86,25 +97,15 @@
                 @endif
 
                 @if($order->status === 'diproses' && !$order->contract)
-                    <details class="border rounded-md p-3">
-                        <summary class="text-sm font-medium cursor-pointer">Buat Kontrak</summary>
-                        <form action="{{ route('admin.orders.contract', $order) }}" method="POST" class="mt-3 space-y-2">
-                            @csrf
-                            <input name="nama" placeholder="Nama" value="{{ $order->user->name }}" required class="w-full rounded-md border-gray-300 px-2 py-1.5 border text-sm">
-                            <input name="nik" placeholder="NIK" value="{{ $order->user->nik }}" class="w-full rounded-md border-gray-300 px-2 py-1.5 border text-sm">
-                            <input name="domisili" placeholder="Domisili" value="{{ $order->user->domisili }}" class="w-full rounded-md border-gray-300 px-2 py-1.5 border text-sm">
-                            <textarea name="alamat" placeholder="Alamat" class="w-full rounded-md border-gray-300 px-2 py-1.5 border text-sm">{{ $order->user->alamat }}</textarea>
-                            <button class="w-full bg-primary text-white py-1.5 rounded-md text-sm hover:bg-primary-dark">Generate Kontrak</button>
-                        </form>
-                    </details>
-                @endif
+                <form action="{{ route('admin.orders.contract', $order) }}" method="POST">
+                    @csrf
+                    <button class="w-full bg-primary text-white py-2 rounded-md text-sm hover:bg-primary-dark">Buat Surat Perjanjian (Otomatis)</button>
+                </form>
+                <p class="text-xs text-gray-400">Data NIK, domisili, dan alamat diambil otomatis dari data konsumen saat checkout.</p>
+                 @endif
+    
 
-                @if($order->status === 'diproses' && !$order->pnbpBill)
-                    <form action="{{ route('admin.orders.bill', $order) }}" method="POST">
-                        @csrf
-                        <button class="w-full bg-accent text-primary-dark py-2 rounded-md text-sm font-semibold hover:brightness-95">Buat Tagihan PNBP</button>
-                    </form>
-                @endif
+                
 
                 @if($order->status === 'siap_diambil')
                     <form action="{{ route('admin.orders.markTaken', $order) }}" method="POST">
@@ -122,6 +123,35 @@
             </div>
         @endif
 
+      @if(auth()->user()->role === 'petugas_pnbp')
+    <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-5 space-y-3">
+        <h3 class="font-semibold">Aksi Petugas PNBP</h3>
+
+        @if($order->contract && !$order->pnbpBill && $order->status === 'diproses')
+            <details class="border rounded-md p-3">
+                <summary class="text-sm font-medium cursor-pointer">Buat Tagihan PNBP</summary>
+                <div class="mt-3 mb-2 text-xs text-gray-500 space-y-1">
+                    @foreach($order->items as $item)
+                        <div>{{ $item->product_name }} ({{ $item->packaging }}) x {{ $item->qty }} = {{ $item->formattedSubtotal() }}</div>
+                    @endforeach
+                    <div class="font-semibold text-primary-dark pt-1 border-t">Total: {{ $order->formattedTotal() }}</div>
+                </div>
+                <form action="{{ route('admin.pnbp.store', $order) }}" method="POST" class="space-y-2">
+                    @csrf
+                    <label class="text-xs text-gray-500">Jatuh Tempo Pembayaran</label>
+                    <input type="date" name="due_date" value="{{ now()->addDays(7)->format('Y-m-d') }}" required class="w-full rounded-md border-gray-300 px-2 py-1.5 border text-sm">
+                    <label class="text-xs text-gray-500">Catatan (opsional)</label>
+                    <textarea name="notes" placeholder="Catatan tambahan..." class="w-full rounded-md border-gray-300 px-2 py-1.5 border text-sm"></textarea>
+                    <button class="w-full bg-accent text-primary-dark py-1.5 rounded-md text-sm font-semibold hover:brightness-95">Terbitkan Tagihan</button>
+                </form>
+            </details>
+        @elseif(!$order->contract)
+            <p class="text-xs text-gray-400">Menunggu surat perjanjian dari Petugas Layanan.</p>
+        @elseif($order->pnbpBill)
+            <p class="text-xs text-gray-400">Tagihan sudah diterbitkan: {{ $order->pnbpBill->bill_number }}</p>
+        @endif
+    </div>
+@endif
         <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-5">
             <h3 class="font-semibold mb-3">Alur Status</h3>
             <ol class="relative border-l-2 border-accent-light pl-4 space-y-2 text-xs">

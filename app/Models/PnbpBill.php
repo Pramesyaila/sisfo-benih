@@ -9,7 +9,7 @@ class PnbpBill extends Model
     protected $table = 'pnbp_bills';
 
     protected $fillable = [
-        'order_id', 'bill_number', 'amount', 'status', 'due_date', 'paid_at', 'created_by',
+    'order_id', 'bill_number', 'amount', 'status', 'due_date', 'content', 'notes', 'paid_at', 'created_by',
     ];
 
     protected $casts = [

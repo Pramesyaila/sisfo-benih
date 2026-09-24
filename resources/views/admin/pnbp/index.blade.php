@@ -3,6 +3,31 @@
 @section('title', 'Tagihan PNBP')
 
 @section('content')
+
+@if($waitingForBill->isNotEmpty())
+<div class="bg-white rounded-xl shadow-sm border border-gray-100 overflow-x-auto mb-6">
+    <div class="px-4 py-3 border-b bg-base font-semibold text-sm">Pesanan Menunggu Tagihan ({{ $waitingForBill->count() }})</div>
+    <table class="w-full text-sm">
+        <thead class="bg-base text-gray-500 text-left">
+            <tr><th class="px-4 py-3">No. Pesanan</th><th class="px-4 py-3">Konsumen</th><th class="px-4 py-3">No. Kontrak</th><th class="px-4 py-3">Total</th><th class="px-4 py-3"></th></tr>
+        </thead>
+        <tbody class="divide-y">
+            @foreach($waitingForBill as $order)
+            <tr>
+                <td class="px-4 py-3 font-medium">{{ $order->order_number }}</td>
+                <td class="px-4 py-3">{{ $order->user->name }}</td>
+                <td class="px-4 py-3">{{ $order->contract->contract_number }}</td>
+                <td class="px-4 py-3">{{ $order->formattedTotal() }}</td>
+                <td class="px-4 py-3">
+                    <a href="{{ route('admin.orders.show', $order) }}" class="bg-accent text-primary-dark px-3 py-1.5 rounded-md text-xs font-semibold hover:brightness-95 inline-block">Isi Tagihan →</a>
+                </td>
+            </tr>
+            @endforeach
+        </tbody>
+    </table>
+</div>
+@endif
+
 <form method="GET" class="mb-4 flex gap-2">
     <select name="status" class="rounded-md border-gray-300 px-3 py-2 border text-sm">
         <option value="">Semua Status</option>

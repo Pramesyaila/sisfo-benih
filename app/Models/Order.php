@@ -7,13 +7,24 @@ use Illuminate\Database\Eloquent\Model;
 class Order extends Model
 {
     protected $fillable = [
-        'order_number', 'user_id', 'status', 'total', 'notes', 'processed_by', 'taken_at',
+    'order_number', 'user_id', 'status', 'total', 'notes',
+    'pickup_date', 'pickup_location', 'processed_by', 'taken_at',
     ];
 
     protected $casts = [
         'taken_at' => 'datetime',
+        'pickup_date' => 'date',
     ];
 
+    public function pickupLocationLabel(): string
+    {
+     return match ($this->pickup_location) {
+        'brmp_penerapan' => 'BRMP Penerapan',
+        'ip2mp_cipaku' => 'IP2MP Cipaku',
+        'dikirim' => 'Dikirim ke alamat pemohon',
+        default => '-',
+        };
+    }
     public static function statusLabel(string $status): string
     {
         return match ($status) {

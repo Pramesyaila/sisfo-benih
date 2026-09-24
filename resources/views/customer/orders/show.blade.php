@@ -45,6 +45,14 @@
             </div>
         @endif
 
+        @if($order->pnbpBill)
+    <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-5">
+        <h3 class="font-semibold mb-2">Tagihan PNBP {{ $order->pnbpBill->bill_number }}</h3>
+        <pre class="whitespace-pre-wrap text-xs bg-base p-3 rounded-md border">{{ $order->pnbpBill->content }}</pre>
+        <button onclick="window.print()" class="mt-2 text-primary-dark text-sm font-semibold hover:underline">🖨️ Cetak Tagihan</button>
+    </div>
+@endif
+
         @if($order->paymentProofs->isNotEmpty())
             <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-5">
                 <h2 class="font-semibold mb-2">Riwayat Bukti Pembayaran</h2>

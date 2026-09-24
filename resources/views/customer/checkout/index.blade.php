@@ -30,11 +30,40 @@
             <span>Rp{{ number_format($total,0,',','.') }}</span>
         </div>
 
-        <form action="{{ route('checkout.store') }}" method="POST" class="mt-4">
+        <form action="{{ route('checkout.store') }}" method="POST" class="mt-4 space-y-3">
             @csrf
-            <label class="block text-sm font-medium mb-1">Catatan (opsional)</label>
-            <textarea name="notes" rows="3" class="w-full rounded-md border-gray-300 focus:border-primary focus:ring-primary px-3 py-2 border text-sm"></textarea>
-            <button class="w-full mt-3 bg-accent hover:brightness-95 text-primary-dark font-bold px-6 py-3 rounded-md">
+            <div>
+                <label class="block text-sm font-medium mb-1">Nomor KTP</label>
+                <input type="text" name="nik" required value="{{ old('nik', auth()->user()->nik) }}" class="w-full rounded-md border-gray-300 focus:border-primary focus:ring-primary px-3 py-2 border text-sm">
+            </div>
+            <div>
+                <label class="block text-sm font-medium mb-1">Domisili (Kabupaten/Kota)</label>
+                <input type="text" name="domisili" required value="{{ old('domisili', auth()->user()->domisili) }}" class="w-full rounded-md border-gray-300 focus:border-primary focus:ring-primary px-3 py-2 border text-sm">
+            </div>
+            <div>
+                <label class="block text-sm font-medium mb-1">Alamat Lengkap</label>
+                <textarea name="alamat" rows="2" required class="w-full rounded-md border-gray-300 focus:border-primary focus:ring-primary px-3 py-2 border text-sm">{{ old('alamat', auth()->user()->alamat) }}</textarea>
+            </div>
+            <div>
+                <label class="block text-sm font-medium mb-1">Tujuan Penggunaan</label>
+                <textarea name="notes" rows="2" required placeholder="Contoh: untuk kebutuhan tanam musim ini seluas 1 hektar" class="w-full rounded-md border-gray-300 focus:border-primary focus:ring-primary px-3 py-2 border text-sm">{{ old('notes') }}</textarea>
+            </div>
+
+            <div>
+                <label class="block text-sm font-medium mb-1">Tanggal Rencana Pengambilan/Pengiriman</label>
+                <input type="date" name="pickup_date" required min="{{ now()->format('Y-m-d') }}" value="{{ old('pickup_date') }}" class="w-full rounded-md border-gray-300 focus:border-primary focus:ring-primary px-3 py-2 border text-sm">
+            </div>
+
+            <div>
+                <label class="block text-sm font-medium mb-2">Lokasi Pengambilan/Pengiriman</label>
+                <div class="space-y-1 text-sm">
+                    <label class="flex items-center gap-2"><input type="radio" name="pickup_location" value="brmp_penerapan" required> BRMP Penerapan</label>
+                    <label class="flex items-center gap-2"><input type="radio" name="pickup_location" value="ip2mp_cipaku"> IP2MP Cipaku</label>
+                    <label class="flex items-center gap-2"><input type="radio" name="pickup_location" value="dikirim"> Dikirim ke alamat pemohon</label>
+                </div>
+            </div>
+
+            <button class="w-full mt-1 bg-accent hover:brightness-95 text-primary-dark font-bold px-6 py-3 rounded-md">
                 Buat Pesanan
             </button>
         </form>
