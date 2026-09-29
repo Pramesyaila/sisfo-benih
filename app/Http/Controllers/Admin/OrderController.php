@@ -57,66 +57,77 @@ class OrderController extends Controller
         return back()->with('success', 'Pesanan sedang diproses. Silakan buat kontrak & tagihan PNBP.');
     }
 
-    // Buat kontrak otomatis dari template + data konsumen
-    public function generateContract(Request $request, Order $order)
+    // Buat kontrak otomatis dari data konsumen yang sudah diisi saat checkout — tanpa perlu isi ulang
+    public function generateContract(Order $order)
     {
+        if ($order->status !== 'diproses') {
+            return back()->with('error', 'Pesanan belum berstatus diproses.');
+        }
+
         if ($order->contract) {
             return back()->with('error', 'Kontrak untuk pesanan ini sudah dibuat.');
         }
 
-        $data = $request->validate([
-            'nama' => ['required', 'string', 'max:255'],
-            'nik' => ['nullable', 'string', 'max:50'],
-            'domisili' => ['nullable', 'string', 'max:255'],
-            'alamat' => ['nullable', 'string'],
-        ]);
+        $user = $order->user;
 
         $itemsText = $order->items->map(fn ($i) => "- {$i->product_name} ({$i->packaging}) x {$i->qty}")->implode("\n");
 
         $content = "Yang bertanda tangan di bawah ini:\n\n" .
-            "Nama       : {$data['nama']}\n" .
-            "NIK        : " . ($data['nik'] ?? '-') . "\n" .
-            "Domisili   : " . ($data['domisili'] ?? '-') . "\n" .
-            "Alamat     : " . ($data['alamat'] ?? '-') . "\n\n" .
-            "Selanjutnya disebut sebagai PIHAK PERTAMA / Pemesan, menyatakan telah melakukan pemesanan benih/bibit " .
+            "Nama       : {$user->name}\n" .
+            "NIK        : " . ($user->nik ?? '-') . "\n" .
+            "Domisili   : " . ($user->domisili ?? '-') . "\n" .
+            "Alamat     : " . ($user->alamat ?? '-') . "\n\n" .
+            "Selanjutnya disebut sebagai PIHAK KEDUA / Pemesan, menyatakan telah melakukan pemesanan benih/bibit " .
             "dengan nomor pesanan {$order->order_number} sebagai berikut:\n\n{$itemsText}\n\n" .
-            "Total nilai pesanan: Rp" . number_format($order->total, 0, ',', '.') . "\n\n" .
+            "Total nilai pesanan : Rp" . number_format($order->total, 0, ',', '.') . "\n" .
+            "Tujuan penggunaan   : {$order->notes}\n" .
+            "Tgl rencana ambil   : " . (optional($order->pickup_date)->format('d F Y') ?? '-') . "\n" .
+            "Lokasi pengambilan  : {$order->pickupLocationLabel()}\n\n" .
             "Kontrak ini dibuat sebagai bagian dari proses administrasi pengelolaan dan penjualan benih/bibit.";
 
         Contract::create([
             'order_id' => $order->id,
             'contract_number' => 'KTR-' . now()->format('Ymd') . '-' . strtoupper(Str::random(5)),
-            'nama' => $data['nama'],
-            'nik' => $data['nik'] ?? null,
-            'domisili' => $data['domisili'] ?? null,
-            'alamat' => $data['alamat'] ?? null,
+            'nama' => $user->name,
+            'nik' => $user->nik,
+            'domisili' => $user->domisili,
+            'alamat' => $user->alamat,
             'content' => $content,
             'created_by' => Auth::id(),
         ]);
 
-        return back()->with('success', 'Kontrak berhasil dibuat.');
+        return back()->with('success', 'Surat perjanjian berhasil dibuat otomatis dari data konsumen.');
     }
-
-    // Buat tagihan PNBP untuk pesanan (dipakai Petugas Layanan / Petugas PNBP)
-    public function generateBill(Order $order)
+    
+    // Tampilkan surat perjanjian dalam format dokumen resmi siap cetak
+    public function printKontrak(Order $order)
     {
-        if ($order->pnbpBill) {
-            return back()->with('error', 'Tagihan PNBP untuk pesanan ini sudah ada.');
-        }
+        abort_unless($order->contract, 404);
 
-        PnbpBill::create([
-            'order_id' => $order->id,
-            'bill_number' => 'PNBP-' . now()->format('Ymd') . '-' . strtoupper(Str::random(5)),
-            'amount' => $order->total,
-            'status' => 'belum_dibayar',
-            'due_date' => now()->addDays(7),
-            'created_by' => Auth::id(),
-        ]);
+        $order->load('user', 'contract', 'items');
 
-        $order->update(['status' => 'menunggu_pembayaran']);
-
-        return back()->with('success', 'Tagihan PNBP berhasil dibuat. Konsumen dapat melakukan pembayaran.');
+        return view('admin.orders.print-kontrak', compact('order'));
     }
+    // Buat tagihan PNBP untuk pesanan (dipakai Petugas Layanan / Petugas PNBP)
+    // public function generateBill(Order $order)
+    // {
+    //     if ($order->pnbpBill) {
+    //         return back()->with('error', 'Tagihan PNBP untuk pesanan ini sudah ada.');
+    //     }
+
+    //     PnbpBill::create([
+    //         'order_id' => $order->id,
+    //         'bill_number' => 'PNBP-' . now()->format('Ymd') . '-' . strtoupper(Str::random(5)),
+    //         'amount' => $order->total,
+    //         'status' => 'belum_dibayar',
+    //         'due_date' => now()->addDays(7),
+    //         'created_by' => Auth::id(),
+    //     ]);
+
+    //     $order->update(['status' => 'menunggu_pembayaran']);
+
+    //     return back()->with('success', 'Tagihan PNBP berhasil dibuat. Konsumen dapat melakukan pembayaran.');
+    // }
 
     public function markTaken(Order $order)
     {
@@ -141,5 +152,12 @@ class OrderController extends Controller
         $order->update(['status' => 'dibatalkan']);
 
         return back()->with('success', 'Pesanan dibatalkan.');
+    }
+
+    public function printPermohonan(Order $order)
+    {
+        $order->load('user', 'items.product.category');
+
+        return view('admin.orders.print-permohonan', compact('order'));
     }
 }

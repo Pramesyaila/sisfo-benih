@@ -27,8 +27,13 @@ class CheckoutController extends Controller
 
     public function store(Request $request)
     {
-        $request->validate([
-            'notes' => ['nullable', 'string', 'max:1000'],
+        $validated = $request->validate([
+            'nik' => ['required', 'string', 'max:50'],
+            'domisili' => ['required', 'string', 'max:255'],
+            'alamat' => ['required', 'string'],
+            'notes' => ['required', 'string', 'max:1000'],
+            'pickup_date' => ['required', 'date', 'after_or_equal:today'],
+            'pickup_location' => ['required', 'in:brmp_penerapan,ip2mp_cipaku,dikirim'],
         ]);
 
         $cart = CartController::cartWithProducts($request);
@@ -37,12 +42,19 @@ class CheckoutController extends Controller
             return redirect()->route('cart.index')->with('error', 'Keranjang anda masih kosong.');
         }
 
-        // Cek ketersediaan stok sebelum pesanan dibuat
         foreach ($cart as $row) {
             if ($row['qty'] > $row['product']->stock) {
                 return back()->with('error', "Stok {$row['product']->name} tidak mencukupi.");
             }
         }
+
+        // Simpan/perbarui data identitas konsumen ke profilnya, supaya Petugas Layanan
+        // bisa langsung generate kontrak tanpa perlu tanya-tanya lagi ke konsumen
+        Auth::user()->update([
+            'nik' => $validated['nik'],
+            'domisili' => $validated['domisili'],
+            'alamat' => $validated['alamat'],
+        ]);
 
         $order = DB::transaction(function () use ($cart, $request) {
             $order = Order::create([
@@ -51,6 +63,8 @@ class CheckoutController extends Controller
                 'status' => 'dipesan',
                 'total' => $cart->sum('subtotal'),
                 'notes' => $request->notes,
+                'pickup_date' => $request->pickup_date,
+                'pickup_location' => $request->pickup_location,
             ]);
 
             foreach ($cart as $row) {
@@ -73,4 +87,4 @@ class CheckoutController extends Controller
         return redirect()->route('orders.show', $order)
             ->with('success', 'Pesanan berhasil dibuat. Silakan tunggu proses administrasi dari petugas.');
     }
-}
+    }

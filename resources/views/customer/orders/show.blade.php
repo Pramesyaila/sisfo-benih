@@ -154,6 +154,25 @@
                             </div>
                             <x-customer.status-pill :label="ucfirst($proof->status)" :tone="$proofTone"></x-customer.status-pill>
                         </div>
+        @if($order->pnbpBill)
+    <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-5">
+        <h3 class="font-semibold mb-2">Tagihan PNBP {{ $order->pnbpBill->bill_number }}</h3>
+        <pre class="whitespace-pre-wrap text-xs bg-base p-3 rounded-md border">{{ $order->pnbpBill->content }}</pre>
+        <button onclick="window.print()" class="mt-2 text-primary-dark text-sm font-semibold hover:underline">🖨️ Cetak Tagihan</button>
+    </div>
+@endif
+
+        @if($order->paymentProofs->isNotEmpty())
+            <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-5">
+                <h2 class="font-semibold mb-2">Riwayat Bukti Pembayaran</h2>
+                <ul class="text-sm divide-y">
+                    @foreach($order->paymentProofs as $proof)
+                        <li class="py-2 flex justify-between items-center">
+                            <a href="{{ asset('storage/'.$proof->file_path) }}" target="_blank" class="text-primary-dark hover:underline">Lihat berkas</a>
+                            <span class="badge {{ $proof->status === 'valid' ? 'bg-primary text-white' : ($proof->status === 'ditolak' ? 'bg-red-100 text-red-700' : 'bg-accent-light text-primary-dark') }}">
+                                {{ ucfirst($proof->status) }}
+                            </span>
+                        </li>
                     @endforeach
                 </div>
             </section>
