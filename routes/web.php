@@ -15,6 +15,7 @@ use App\Http\Controllers\Customer\CartController;
 use App\Http\Controllers\Customer\CatalogController;
 use App\Http\Controllers\Customer\CheckoutController;
 use App\Http\Controllers\Customer\OrderController;
+use App\Http\Controllers\ProfileController;
 use Illuminate\Support\Facades\Route;
 
 /*
@@ -30,6 +31,11 @@ Route::post('/logout', [LoginController::class, 'logout'])->name('logout');
 
 Route::get('/register', [RegisterController::class, 'showRegistrationForm'])->name('register');
 Route::post('/register', [RegisterController::class, 'register']);
+Route::middleware('auth')->group(function () {
+    Route::get('/profile', [ProfileController::class, 'show'])->name('profile.show');
+    Route::get('/profile/edit', [ProfileController::class, 'edit'])->name('profile.edit');
+    Route::put('/profile', [ProfileController::class, 'update'])->name('profile.update');
+});
 
 /*
 |--------------------------------------------------------------------------
@@ -81,7 +87,7 @@ Route::prefix('admin')->name('admin.')->middleware(['auth', 'role:petugas_layana
         Route::get('/pesanan', [AdminOrderController::class, 'index'])->name('orders.index');
         Route::post('/pesanan/{order}/proses', [AdminOrderController::class, 'process'])->name('orders.process');
         Route::post('/pesanan/{order}/kontrak', [AdminOrderController::class, 'generateContract'])->name('orders.contract');
-        Route::post('/pesanan/{order}/tagihan', [AdminOrderController::class, 'generateBill'])->name('orders.bill');
+  //    Route::post('/pesanan/{order}/tagihan', [AdminOrderController::class, 'generateBill'])->name('orders.bill');
         Route::post('/pesanan/{order}/selesai', [AdminOrderController::class, 'markTaken'])->name('orders.markTaken');
         Route::post('/pesanan/{order}/batal', [AdminOrderController::class, 'cancel'])->name('orders.cancel');
 
@@ -90,11 +96,21 @@ Route::prefix('admin')->name('admin.')->middleware(['auth', 'role:petugas_layana
     });
 
     // Bisa dilihat lintas role (detail pesanan)
-    Route::get('/pesanan/{order}', [AdminOrderController::class, 'show'])->name('orders.show');
-
+    Route::get('/pesanan/{order}', [AdminOrderController::class, 'show'])->name('admin.orders.show');
+    
     // PNBP (Petugas PNBP)
     Route::middleware('role:petugas_pnbp,petugas_layanan')->group(function () {
         Route::get('/pnbp', [PnbpController::class, 'index'])->name('pnbp.index');
+    });
+
+    Route::middleware('role:petugas_layanan,petugas_pnbp')->group(function () {
+        Route::get('/pesanan/{order}/cetak/kontrak', [AdminOrderController::class, 'printKontrak'])->name('orders.print.kontrak');
+        Route::get('/pesanan/{order}/cetak/permohonan', [AdminOrderController::class, 'printPermohonan'])->name('orders.print.permohonan');
+
+        });
+
+    Route::middleware('role:petugas_pnbp')->group(function () {
+        Route::post('/pnbp/{order}/tagihan', [PnbpController::class, 'store'])->name('pnbp.store');
     });
 
     // Laporan - semua role admin boleh melihat laporan

@@ -3,48 +3,69 @@
 @section('title', 'Daftar Akun Konsumen')
 
 @section('content')
-<div class="max-w-md mx-auto bg-white shadow rounded-xl p-8 mt-6 border-t-4 border-primary">
-    <div class="text-center mb-6">
-        <div class="mx-auto bg-accent-light text-primary-dark w-14 h-14 rounded-full flex items-center justify-center text-2xl mb-3">🧑‍🌾</div>
-        <h1 class="text-xl font-bold text-primary-dark">Daftar Akun Konsumen</h1>
-        <p class="text-sm text-gray-500 mt-1">Untuk memesan benih/bibit melalui katalog.</p>
-    </div>
+<div class="auth-layout">
+    <aside class="auth-aside">
+        <div>
+            <span class="auth-aside__eyebrow">Mulai dari langkah kecil</span>
+            <h1 class="auth-aside__title">Ruang Anda untuk<br>menumbuhkan pilihan.</h1>
+            <p class="auth-aside__copy">Buat akun pelanggan untuk menyimpan keranjang, melihat pesanan, dan menerima pembaruan dari setiap proses.</p>
+        </div>
+        <div class="auth-aside__art">
+            <x-customer.icon name="leaf" :size="96"></x-customer.icon>
+            <small>terhubung · transparan · mudah</small>
+        </div>
+    </aside>
 
-    <form method="POST" action="{{ route('register') }}" class="space-y-4">
-        @csrf
-        <div>
-            <label class="block text-sm font-medium mb-1">Nama Lengkap</label>
-            <input type="text" name="name" value="{{ old('name') }}" required
-                class="w-full rounded-md border-gray-300 focus:border-primary focus:ring-primary px-3 py-2 border">
+    <section class="auth-card">
+        <div class="auth-card__header">
+            <span class="auth-card__eyebrow">Akun pelanggan</span>
+            <h2 class="auth-card__title">Buat akun baru</h2>
+            <p class="auth-card__description">Registrasi ini digunakan untuk katalog dan pemesanan benih atau bibit.</p>
         </div>
-        <div>
-            <label class="block text-sm font-medium mb-1">Email</label>
-            <input type="email" name="email" value="{{ old('email') }}" required
-                class="w-full rounded-md border-gray-300 focus:border-primary focus:ring-primary px-3 py-2 border">
-        </div>
-        <div>
-            <label class="block text-sm font-medium mb-1">No. Telepon</label>
-            <input type="text" name="phone" value="{{ old('phone') }}"
-                class="w-full rounded-md border-gray-300 focus:border-primary focus:ring-primary px-3 py-2 border">
-        </div>
-        <div>
-            <label class="block text-sm font-medium mb-1">Kata Sandi</label>
-            <input type="password" name="password" required
-                class="w-full rounded-md border-gray-300 focus:border-primary focus:ring-primary px-3 py-2 border">
-        </div>
-        <div>
-            <label class="block text-sm font-medium mb-1">Konfirmasi Kata Sandi</label>
-            <input type="password" name="password_confirmation" required
-                class="w-full rounded-md border-gray-300 focus:border-primary focus:ring-primary px-3 py-2 border">
-        </div>
-        <button type="submit" class="w-full bg-primary hover:bg-primary-dark text-white font-semibold py-2.5 rounded-md transition">
-            Daftar
-        </button>
-    </form>
 
-    <p class="text-center text-sm text-gray-500 mt-6">
-        Sudah punya akun?
-        <a href="{{ route('login') }}" class="text-primary-dark font-semibold hover:underline">Masuk di sini</a>
-    </p>
+        <form method="POST" action="{{ route('register') }}" class="auth-form">
+            @csrf
+            <div>
+                <label class="form-label" for="register-name">Nama lengkap</label>
+                <input id="register-name" class="form-input" type="text" name="name" value="{{ old('name') }}" required autocomplete="name" placeholder="Nama lengkap Anda">
+                @error('name')
+                    <p class="form-error">{{ $message }}</p>
+                @enderror
+            </div>
+            <div>
+                <label class="form-label" for="register-email">Email</label>
+                <input id="register-email" class="form-input" type="email" name="email" value="{{ old('email') }}" required autocomplete="email" placeholder="nama@email.com">
+                @error('email')
+                    <p class="form-error">{{ $message }}</p>
+                @enderror
+            </div>
+            <div>
+                <label class="form-label" for="register-phone">Nomor telepon <span class="font-normal text-[var(--muted)]">(opsional)</span></label>
+                <input id="register-phone" class="form-input" type="text" name="phone" value="{{ old('phone') }}" autocomplete="tel" placeholder="Contoh: 0812xxxxxxx">
+                @error('phone')
+                    <p class="form-error">{{ $message }}</p>
+                @enderror
+            </div>
+            <div class="grid gap-3 sm:grid-cols-2">
+                <div>
+                    <label class="form-label" for="register-password">Kata sandi</label>
+                    <input id="register-password" class="form-input" type="password" name="password" required autocomplete="new-password" placeholder="Minimal 6 karakter">
+                    @error('password')
+                        <p class="form-error">{{ $message }}</p>
+                    @enderror
+                </div>
+                <div>
+                    <label class="form-label" for="register-password-confirmation">Konfirmasi kata sandi</label>
+                    <input id="register-password-confirmation" class="form-input" type="password" name="password_confirmation" required autocomplete="new-password" placeholder="Ulangi kata sandi">
+                </div>
+            </div>
+            <button class="btn btn--primary w-full" type="submit">
+                Buat akun pelanggan
+                <x-customer.icon name="arrow-right" :size="16"></x-customer.icon>
+            </button>
+        </form>
+
+        <p class="auth-footer">Sudah punya akun? <a href="{{ route('login') }}">Masuk di sini</a></p>
+    </section>
 </div>
 @endsection
